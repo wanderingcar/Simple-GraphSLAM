@@ -18,7 +18,7 @@ Mat3 v2t(Vec3 trans)
 Vec3 t2v(Mat3 mat)
 {
 	Vec3 ret;
-	ret << mat[0, 2], mat[1, 2], atan2(mat[1, 0], mat[0, 0]);
+	ret << mat(0, 2), mat(1, 2), atan2(mat(1, 0), mat(0, 0));
 
 	return ret;
 }
