@@ -1,6 +1,7 @@
 #include "common.hpp"
 #include <unordered_map>
 #include "utils.hpp"
+#include <Eigen/Sparse>
 
 class PoseEdge
 {
@@ -90,19 +91,19 @@ public:
 		{
 			int size = nodes.size() + landmarks.size();
 			H.resize(size, size);
-			H.setIdentity();
+			H.setZero();
 			b.resize(size);
 			b.setZero();
 
 			linearize();
-			solve(iteration);
+			solve();
 		}
 	}
 
 
 	void linearize() // linearize error functions and formulate a linear system
 	{
-		for (auto& edge : edges)
+		for (auto& edge : edges) // adding pose constraints
 		{
 			size_t i_index = edge.get_from();
 			size_t j_index = edge.get_to();
@@ -117,6 +118,7 @@ public:
 			Mat3 T_j = v2t(v_j);
 			Mat2 R_i = T_i.block(0, 0, 2, 2);
 			Mat2 R_j = T_j.block(0, 0, 2, 2);
+			Mat2 R_z = T_z.block(0, 0, 2, 2);
 
 			double si = sin(v_i(2));
 			double ci = cos(v_i(2));
@@ -127,23 +129,58 @@ public:
 
 			// calulate jacobian
 			Mat3 A;
+			A.block(0, 0, 2, 2) = -R_z.transpose() * R_i.transpose();
+			A.block(0, 2, 2, 1) = R_z.transpose() * dR_i.transpose();
+			A.row(2) << 0, 0, -1;
 			Mat3 B;
+			B.block(0, 0, 2, 2) = R_z.transpose() * R_i.transpose();
+			B.col(2) << 0, 0, 1;
+			B.row(2) << 0, 0, 1;
 
 			// calculate error vector
 			Vec3 e;
+			e = t2v((T_z.inverse() * T_i.inverse()) * T_j);
 
 			// Formulate blocks
-
+			Mat3 H_ii = (A.transpose() * omega) * A;
+			Mat3 H_ij = (A.transpose() * omega) * B;
+			Mat3 H_jj = (B.transpose() * omega) * B;
+			Vec3 b_i = (-A.transpose() * omega) * e;
+			Vec3 b_j = (-B.transpose() * omega) * e;
 
 			// Update H and b matrix
+			H.block(3 * i_index, 3 * i_index, 3, 3) += H_ii;
+			H.block(3 * i_index, 3 * j_index, 3, 3) += H_ij;
+			H.block(3 * j_index, 3 * i_index, 3, 3) += H_ii.transpose();
+			H.block(3 * j_index, 3 * j_index, 3, 3) += H_jj;
+			b.segment(3 * i_index, 3) += b_i;
+			b.segment(3 * j_index, 3) += b_j;
+		}
 
+		// adding landmark constraints
+	}
+
+	void update_node(Eigen::VectorXd dx)
+	{
+		for (size_t i = 0; i < nodes.size(); i++)
+		{
+			nodes[i] += dx.segment(3 * i, 3);
 		}
 	}
 
-	void solve(int iteration) // solve linear system, update poses
+	void solve() // solve linear system, update poses
 	{
 		H.block(0, 0, 3, 3) += Mat3::Identity(); // initial post 0, 0, 0
 
-		
+		Eigen::SparseMatrix<double> H_sparse;
+		H_sparse = H.sparseView();
+		Eigen::VectorXd dx;
+		Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
+		solver.compute(H_sparse);
+		dx = solver.solve(b);
+
+		dx.segment(0, 3) << 0, 0, 0;
+
+		update_node(dx);
 	}
 };
