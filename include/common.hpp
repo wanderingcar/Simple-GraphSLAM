@@ -2,6 +2,9 @@
 #include <vector>
 #include <Eigen/Dense>
 #include <iostream>
+#include <string>
+
+constexpr double PI = 3.141592;
 
 typedef Eigen::Matrix3d Mat3;
 typedef Eigen::Vector3d Vec3;

@@ -1,6 +1,5 @@
-#include <Eigen/Core>
 #include "utils.hpp"
-#include "common.hpp"
+
 
 Mat3 v2t(Vec3 trans)
 {
@@ -23,3 +22,16 @@ Vec3 t2v(Mat3 mat)
 	return ret;
 }
 
+std::vector<std::string> split(std::string input, char delimiter)
+{
+	std::vector<std::string> answer;
+	std::stringstream ss(input);
+	std::string temp;
+
+	while (getline(ss, temp, delimiter))
+	{
+		answer.push_back(temp);
+	}
+
+	return answer;
+}
