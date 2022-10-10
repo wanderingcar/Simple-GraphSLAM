@@ -1,0 +1,4 @@
+VERTEX index x y theta
+EDGE to_index from_index x y theta information_matrix(6)[0 1 4 9 5 2]
+LANDMARK index x y
+LEDGE vertex_index landmark_index distance theta information_matrix(3)[0 3 1]

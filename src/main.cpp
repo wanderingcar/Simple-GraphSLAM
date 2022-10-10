@@ -6,7 +6,7 @@
 int main()
 {
     std::cout << "Welcome to GRAPH SLAM" << std::endl;
-    std::string path = "./data/p1.txt";
+    std::string path = "./data/p4.txt";
 
     PoseGraph pg;
     pg.load_data(path);
@@ -17,4 +17,3 @@ int main()
 
     return EXIT_SUCCESS;
 }
-
